@@ -24,7 +24,7 @@ pub fn build(b: *std.Build) !void {
         []const u8,
         "tty",
         "Specify the port to which the Arduino is connected (defaults to /dev/ttyACM0)",
-    ) orelse "/dev/ttyACM0";
+    ) orelse "/dev/ttyUnoMini";
 
     const bin_path = b.getInstallPath(.{ .custom = exe.installed_path orelse "./bin" }, exe.out_filename);
 
@@ -51,11 +51,12 @@ pub fn build(b: *std.Build) !void {
 
     const objdump = b.step("objdump", "Show dissassembly of the code using avr-objdump");
     const avr_objdump = b.addSystemCommand(&.{
-        "avr-objdump",
-        "-dh",
+        "bash",
+        "lss.sh",
         bin_path,
     });
-    objdump.dependOn(&avr_objdump.step);
+    const output_objdump = avr_objdump.captureStdOut();
+    objdump.dependOn(&b.addInstallFileWithDir(output_objdump, .prefix, "bin/ziginator.lss").step);
     avr_objdump.step.dependOn(&exe.step);
 
     const monitor = b.step("monitor", "Opens a monitor to the serial output");
